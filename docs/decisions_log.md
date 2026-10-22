@@ -22,3 +22,10 @@
 **Decision:** We selected a threshold of **0.60** for production.
 **Why:** The default threshold of 0.50 resulted in a negative net value (-R$1,170) because the model generated too many false alarms. At 0.60, the net value is positive (+R$2,855). 
 **The Trade-off:** By optimizing for profit, we were forced to accept a Recall of 53% (catching 545 out of 1,021 delays). This missed our PRD goal of 70% recall. To improve this, we would need richer features (e.g., seller historical delay rate, holiday calendars) to increase the model's fundamental predictive power.
+
+
+## Decision 5: Historical Rolling Features (v3)
+**Context:** The v2 model plateaued at AUC 0.706. We built v3 by adding historical rolling windows (the historical delay rate of each seller, and the historical delay rate of each customer region) to prevent data leakage while capturing behavioral patterns.
+**Results:** The ROC-AUC jumped to **0.873** and Recall jumped to **87.0%**. The model now catches 1,340 delays (out of 1,540). 
+**The Trade-off:** Precision is only 14.1%, meaning we generate 8,146 false alarms. 
+**Next Step:** We need to re-run the threshold optimization to find the new profit-maximizing threshold.

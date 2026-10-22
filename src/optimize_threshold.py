@@ -9,13 +9,16 @@ from sklearn.linear_model import LogisticRegression
 
 # 1. Load and split exactly as before
 df = pd.read_csv("data/features.csv")
-df["order_purchase_timestamp"] = pd.to_datetime(df["order_purchase_timestamp"])
-df = df.sort_values("order_purchase_timestamp")
+
+# UPDATED: Use the new column names from v3
+df["purchase_time"] = pd.to_datetime(df["purchase_time"])
+df = df.sort_values("purchase_time")
 split_idx = int(len(df) * 0.8)
 train_df = df.iloc[:split_idx].copy()
 test_df = df.iloc[split_idx:].copy()
 
-drop_cols = ["order_id", "order_purchase_timestamp", "order_estimated_delivery_date", "is_late"]
+# UPDATED: Drop the new v3 column names
+drop_cols = ["order_id", "purchase_time", "est_delivery", "is_late"]
 X_train = train_df.drop(columns=drop_cols)
 y_train = train_df["is_late"]
 X_test = test_df.drop(columns=drop_cols)
@@ -33,10 +36,8 @@ pipe = Pipeline([("pre", pre), ("clf", LogisticRegression(max_iter=1000, class_w
 pipe.fit(X_train, y_train)
 proba = pipe.predict_proba(X_test)[:, 1]
 
-# 3. Business Assumptions (Create your own!)
-# If an order is late: customer service cost + refund risk = ₦50 (R$ 50)
+# 3. Business Assumptions
 COST_OF_DELAY = 50
-# If we flag an order and it's on time (False Alarm): Ops team waste time = R$ 5
 COST_OF_FALSE_ALARM = 5
 
 results = []
@@ -59,6 +60,7 @@ for t in np.arange(0.10, 0.91, 0.05):
     })
 
 thr = pd.DataFrame(results)
-best_t = thr.loc[thr["net_value"].idxmax(), "threshold"]
-print(f"Best threshold under these assumptions: {best_t}")
+best_row = thr.loc[thr["net_value"].idxmax()]
+best_t = best_row["threshold"]
+print(f"\nBest threshold under these assumptions: {best_t}")
 print(thr.to_string(index=False))
