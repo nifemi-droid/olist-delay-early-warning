@@ -1,0 +1,12 @@
+# Decisions Log
+
+## Decision 1: Dropping Orders with Missing Delivery Dates
+**Date:** [Today's Date]
+**Context:** We queried the orders table and found 99,441 total orders. However, 2,965 orders (about 3%) have a missing `order_delivered_customer_date`. 
+**Decision:** We will exclude these orders from model training and evaluation. 
+**Why:** If an order has no actual delivery date, it was likely canceled or stuck in transit. We cannot determine if it was "late" relative to the estimated date. Including them would introduce noise and confuse the model.
+
+## Decision 2: The Baseline Challenge (Class Imbalance)
+**Context:** After filtering out missing dates, the overall late delivery rate is **8.11%**. 
+**Decision:** We will not use accuracy as our primary metric. 
+**Why:** A dumb model that predicts "On Time" for every order will achieve 91.89% accuracy, but catch 0% of delays. We must evaluate using Recall (catching delays) and Precision (not wasting ops team time), guided by our Success Metric (Recall ≥ 0.70, Precision constraint).
