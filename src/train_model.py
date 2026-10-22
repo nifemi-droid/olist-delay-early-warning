@@ -29,8 +29,7 @@ print(f"Train size: {len(train_df):,} orders (from {train_df['order_purchase_tim
 print(f"Test size:  {len(test_df):,} orders (from {test_df['order_purchase_timestamp'].min().date()} to {test_df['order_purchase_timestamp'].max().date()})")
 
 # Drop columns we don't want the model to see (IDs and Dates)
-drop_cols = ["order_id", "order_purchase_timestamp", "order_estimated_delivery_date", "is_late"]
-
+drop_cols = ["order_id", "purchase_time", "est_delivery", "is_late"]
 X_train = train_df.drop(columns=drop_cols)
 y_train = train_df["is_late"]
 
