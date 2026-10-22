@@ -11,7 +11,7 @@ base_query = """
         SELECT 
             o.order_id,
             o.customer_id,
-            oi.seller_id,
+            oi.seller_id AS seller_id,
             TRY_CAST(o.order_purchase_timestamp AS TIMESTAMP) as purchase_time,
             TRY_CAST(o.order_estimated_delivery_date AS TIMESTAMP) as est_delivery,
             TRY_CAST(o.order_delivered_customer_date AS TIMESTAMP) as actual_delivery,
@@ -34,15 +34,15 @@ base_query = """
         EXTRACT(month FROM bo.purchase_time) as purchase_month,
         
         -- Window functions
-        AVG(is_late) OVER (
-            PARTITION BY seller_id 
-            ORDER BY purchase_time 
+        AVG(bo.is_late) OVER (
+            PARTITION BY bo.seller_id 
+            ORDER BY bo.purchase_time 
             ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
         ) as seller_delay_rate,
         
-        AVG(is_late) OVER (
-            PARTITION BY customer_id 
-            ORDER BY purchase_time 
+        AVG(bo.is_late) OVER (
+            PARTITION BY bo.customer_id 
+            ORDER BY bo.purchase_time 
             ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
         ) as customer_region_delay_rate,
         
