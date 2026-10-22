@@ -2,7 +2,7 @@ import joblib
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import Dict
+from typing import Dict, Union
 
 app = FastAPI(title="Olist Delay Risk API")
 
@@ -13,7 +13,8 @@ model = joblib.load("models/olist_model.joblib")
 THRESHOLD = 0.60 
 
 class OrderRequest(BaseModel):
-    features: Dict[str, float | str] 
+    # Python 3.9 compatible typing
+    features: Dict[str, Union[float, str, int]]
 
 @app.get("/health")
 def health():
