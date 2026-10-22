@@ -1,10 +1,9 @@
 import duckdb
 
+print("Building the Feature Table (v2)...")
+
 con = duckdb.connect(database=':memory:')
 
-print("Building the Feature Table...")
-
-# This query joins the tables and creates the features we know AT CHECKOUT
 feature_query = """
     CREATE TABLE features AS
     SELECT 
@@ -12,33 +11,39 @@ feature_query = """
         o.order_purchase_timestamp,
         o.order_estimated_delivery_date,
         
-        -- Our Target (1 = Late, 0 = On Time)
+        -- Target
         CASE 
-            WHEN o.order_delivered_customer_date > o.order_estimated_delivery_date THEN 1 
+            WHEN TRY_CAST(o.order_delivered_customer_date AS TIMESTAMP) > TRY_CAST(o.order_estimated_delivery_date AS TIMESTAMP) THEN 1 
             ELSE 0 
         END as is_late,
         
-        -- Features from Order Items (Freight and Price)
-        SUM(oi.price) as total_price,
-        SUM(oi.freight_value) as total_freight,
+        -- NEW FEATURE: Promised transit time in days
+        date_diff('day', TRY_CAST(o.order_purchase_timestamp AS TIMESTAMP), TRY_CAST(o.order_estimated_delivery_date AS TIMESTAMP)) as promised_days,
+        
+        -- NEW FEATURE: Distance proxy (Zip code difference)
+        ABS(TRY_CAST(c.customer_zip_code_prefix AS INTEGER) - TRY_CAST(s.seller_zip_code_prefix AS INTEGER)) as zip_distance,
+        
+        -- NEW FEATURE: Seller ID (Some sellers are just bad at shipping)
+        oi.seller_id,
+        
+        -- Old features
+        COALESCE(SUM(TRY_CAST(oi.price AS DOUBLE)), 0) as total_price,
+        COALESCE(SUM(TRY_CAST(oi.freight_value AS DOUBLE)), 0) as total_freight,
         COUNT(oi.order_item_id) as num_items,
-        
-        -- Features from Customer (Location)
         c.customer_state,
-        
-        -- Features from Products (Physical characteristics)
-        AVG(p.product_weight_g) as avg_weight_g,
-        MAX(p.product_category_name) as primary_category
+        COALESCE(AVG(TRY_CAST(p.product_weight_g AS DOUBLE)), 0) as avg_weight_g,
+        COALESCE(MAX(p.product_category_name), 'unknown') as primary_category
 
     FROM read_csv_auto('data/olist_orders_dataset.csv') o
     LEFT JOIN read_csv_auto('data/olist_order_items_dataset.csv') oi 
         ON o.order_id = oi.order_id
     LEFT JOIN read_csv_auto('data/olist_customers_dataset.csv') c 
         ON o.customer_id = c.customer_id
+    LEFT JOIN read_csv_auto('data/olist_sellers_dataset.csv') s
+        ON oi.seller_id = s.seller_id
     LEFT JOIN read_csv_auto('data/olist_products_dataset.csv') p 
         ON oi.product_id = p.product_id
         
-    -- We only want delivered orders
     WHERE o.order_delivered_customer_date IS NOT NULL 
       AND o.order_estimated_delivery_date IS NOT NULL
       
@@ -47,16 +52,23 @@ feature_query = """
         o.order_purchase_timestamp, 
         o.order_estimated_delivery_date, 
         o.order_delivered_customer_date,
-        c.customer_state
+        c.customer_state,
+        c.customer_zip_code_prefix,
+        s.seller_zip_code_prefix,
+        oi.seller_id
 """
 
 con.execute(feature_query)
-
-# Save the final table to a CSV so our model can use it later
 con.execute("COPY features TO 'data/features.csv' (HEADER, DELIMITER ',')")
 
-print("Success! Feature table saved to data/features.csv")
+print("Success! v2 Feature table saved.")
 
-# Let's verify by looking at the first 3 rows
-print("\nSample of the new Feature Table:")
-print(con.execute("SELECT * FROM features LIMIT 3").fetchdf().to_string())
+# Check the correlation of the new features with is_late
+corr_query = """
+    SELECT 
+        corr(promised_days, is_late) as corr_promised_days,
+        corr(zip_distance, is_late) as corr_zip_distance
+    FROM features
+"""
+print("\nCorrelation with 'is_late':")
+print(con.execute(corr_query).fetchdf().to_string(index=False))
