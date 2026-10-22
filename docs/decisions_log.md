@@ -29,3 +29,8 @@
 **Results:** The ROC-AUC jumped to **0.873** and Recall jumped to **87.0%**. The model now catches 1,340 delays (out of 1,540). 
 **The Trade-off:** Precision is only 14.1%, meaning we generate 8,146 false alarms. 
 **Next Step:** We need to re-run the threshold optimization to find the new profit-maximizing threshold.
+
+## Decision 6: Production Threshold Selection
+**Context:** We scanned thresholds to maximize business value (Missed Delay = R$ 50, False Alarm = R$ 5).
+**Decision:** We recommend a **production threshold of 0.60**.
+**Why:** It yields the maximum net value (R$ 29,415). It catches 1,032 delays (67% recall) while generating 4,437 alerts (which is operationally manageable). Notably, thresholds between 0.60 and 0.75 all produce roughly R$ 28k–R$ 29k in value, giving the ops team flexibility to raise the threshold if they get overwhelmed without destroying ROI.
