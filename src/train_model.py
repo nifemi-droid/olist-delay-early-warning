@@ -1,3 +1,4 @@
+import joblib
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -90,3 +91,9 @@ print(f"True Positives (Caught Delays):  {tp}")
 print(f"False Negatives (Missed Delays): {fn}")
 print(f"False Positives (Wasted Alerts): {fp}")
 print(f"True Negatives (Correct On-Time): {tn}")
+
+# Save the trained model
+import os
+os.makedirs("models", exist_ok=True)
+joblib.dump(best_pipe, "models/olist_model.joblib")
+print("Model saved to models/olist_model.joblib")
