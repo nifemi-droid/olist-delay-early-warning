@@ -16,3 +16,9 @@
 **Decision:** We switched to Logistic Regression with `class_weight="balanced"` and dropped Random Forest.
 **Results:** The AUC jumped to 0.706. We achieved a Recall of 73.9% (catching 755 delays). However, Precision is only 8.8% (7,784 false alarms). 
 **Next Step:** We need to optimize the threshold to balance the cost of a false alarm vs. the cost of a missed delay.
+
+## Decision 4: Threshold Optimization & The Business Reality
+**Context:** We scanned thresholds from 0.10 to 0.90 using business costs (Cost of a missed delay = R$50, Cost of a false alarm = R$5).
+**Decision:** We selected a threshold of **0.60** for production.
+**Why:** The default threshold of 0.50 resulted in a negative net value (-R$1,170) because the model generated too many false alarms. At 0.60, the net value is positive (+R$2,855). 
+**The Trade-off:** By optimizing for profit, we were forced to accept a Recall of 53% (catching 545 out of 1,021 delays). This missed our PRD goal of 70% recall. To improve this, we would need richer features (e.g., seller historical delay rate, holiday calendars) to increase the model's fundamental predictive power.
