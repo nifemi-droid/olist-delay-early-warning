@@ -15,21 +15,21 @@ from sklearn.metrics import (accuracy_score, precision_score, recall_score,
 print("Loading feature table...")
 df = pd.read_csv("data/features.csv")
 
-# Convert dates to datetime objects
-df["order_purchase_timestamp"] = pd.to_datetime(df["order_purchase_timestamp"])
-df = df.sort_values("order_purchase_timestamp") # CRITICAL: Sort by time!
+# NEW: Convert purchase_time to datetime (matches v3 SQL output)
+df["purchase_time"] = pd.to_datetime(df["purchase_time"])
+df = df.sort_values("purchase_time") # CRITICAL: Sort by time!
 
 # 2. Time-Based Split
-# We train on the first 80% of orders, test on the last 20%
 split_idx = int(len(df) * 0.8)
 train_df = df.iloc[:split_idx].copy()
 test_df = df.iloc[split_idx:].copy()
 
-print(f"Train size: {len(train_df):,} orders (from {train_df['order_purchase_timestamp'].min().date()} to {train_df['order_purchase_timestamp'].max().date()})")
-print(f"Test size:  {len(test_df):,} orders (from {test_df['order_purchase_timestamp'].min().date()} to {test_df['order_purchase_timestamp'].max().date()})")
+print(f"Train size: {len(train_df):,} orders (from {train_df['purchase_time'].min().date()} to {train_df['purchase_time'].max().date()})")
+print(f"Test size:  {len(test_df):,} orders (from {test_df['purchase_time'].min().date()} to {test_df['purchase_time'].max().date()})")
 
-# Drop columns we don't want the model to see (IDs and raw Dates)
-drop_cols = ["order_id", "order_purchase_timestamp", "order_estimated_delivery_date", "is_late"]
+# Drop columns we don't want the model to see
+# NEW: match the v3 column names
+drop_cols = ["order_id", "purchase_time", "est_delivery", "is_late"]
 
 X_train = train_df.drop(columns=drop_cols)
 y_train = train_df["is_late"]
@@ -79,7 +79,7 @@ print("\n--- Model Results (Time-Based Split) ---")
 results_df = pd.DataFrame(rows).round(3)
 print(results_df.to_string(index=False))
 
-# 6. Look at the Confusion Matrix for Logistic Regression
+# 6. Confusion Matrix
 print("\n--- Confusion Matrix (Logistic Regression) ---")
 best_pipe = fitted["Logistic Regression"]
 proba_lr = best_pipe.predict_proba(X_test)[:, 1]
