@@ -24,6 +24,12 @@ We built a predictive model that scores an order's risk of delay **at the moment
 * **Missing Features:** We do not have seller processing times, holiday calendars, or live weather data, which would significantly improve predictions.
 * **Monitoring:** While we generated an Evidently data drift report, we have not set up live production monitoring or automated retraining.
 
+## Architecture
+1. **Data:** DuckDB for local SQL on 9 CSVs.
+2. **Model:** Scikit-Learn pipeline (Logistic Regression) saved via Joblib.
+3. **API:** FastAPI serving predictions (`/predict`).
+4. **Dashboard:** Streamlit "Command Center" for business ROI and drift monitoring.
+
 ## Repository Structure
 - `data/` (ignored by git)
 - `docs/` (problem brief, PRD, decision log, drift report)
